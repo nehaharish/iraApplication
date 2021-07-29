@@ -1,7 +1,5 @@
 <template>
-  <v-container class="my-5 px-5 beneficiaries">
-    <p class="grey--text subtitle-2 mb-7">BENEFICIARIES</p>
-    <p class="subtitle-1 font-weight-bold">Primary Beneficiaries</p>
+<div>
     <v-row v-for="item in rows" :key="item.id">
       <v-col cols="auto">
         <label
@@ -10,6 +8,7 @@
             v-model="beneInfo.firstName[item.id]"
             solo
             dense
+            :rules="[rules.required, rules.fullName]"
           ></v-text-field>
         </label>
       </v-col>
@@ -87,7 +86,7 @@
         </v-btn>
       </v-col>
       <v-col
-        v-if="hasAllInputsFilled[item.id] && beneInfo.checkIcon[item.id]"
+        v-if="hasAllInputsFilled[item.id] && beneInfo.checkIcon[item.id] && primaryTotal !== '100%'"
         @click="addRow(item.id)"
         cols="1"
         class="mt-6 px-0 bene-percent-class"
@@ -97,29 +96,7 @@
         </v-btn>
       </v-col>
     </v-row>
-    <v-card
-      flat
-      width="80%"
-      class=" subtitle-2 font-weight-bold d-flex flex-row-reverse mr-15"
-    >
-      <v-card class="py-2 px-2" :class="getPrimaryTotalColor" flat>
-        <span v-if="primaryTotal === '100%'"
-          ><v-icon color="#6cd0a0">check</v-icon></span
-        >
-        Primary Total: {{ primaryTotal }}
-      </v-card>
-    </v-card>
-    <v-card class="d-flex  mt-10 align-center mb-10" flat tile>
-      <v-card flat class="font-weight-bold subtitle-2 mr-4"
-        >Contingent Beneficiaries</v-card
-      >
-      <v-switch v-model="switch1" inset></v-switch>
-    </v-card>
-    <v-btn v-if="primaryTotal === '100%'" width="120" dark color="#008eff"
-      >Next</v-btn
-    >
-    <button type="button" v-else class="disabled-btn" disabled>Next</button>
-  </v-container>
+</div>
 </template>
 
 <script>
@@ -141,6 +118,16 @@ export default {
       ssnInfo: [],
       switch1: false,
       primaryTotal: "0%",
+      rules:{
+        required: value => {
+          return value.length || 'Required'
+        },
+        fullName: value => {
+          const pattern1 = /^[A-Z a-z]*$/
+          return pattern1.test(value) || "Invalid Name"
+        }
+        
+      }
     };
   },
   computed: {
@@ -154,16 +141,7 @@ export default {
       }
       return tempObj;
     },
-    /**
-     * property to show different color and background color
-     *  when primary total reach to 100% or less than 100%
-     */
-    getPrimaryTotalColor() {
-      return {
-        primaryTotalClass: this.primaryTotal === "100%",
-        primaryTotalClass1: this.primaryTotal !== "100%",
-      };
-    },
+    
   },
   methods: {
     /**
@@ -216,11 +194,12 @@ export default {
     getPrimaryTotal() {
       let total = 0;
       if (!this.beneInfo.beneficiaryPercent.length)
-        return (this.primaryTotal = `0%`);
+        this.primaryTotal = `0%`;
       this.beneInfo.beneficiaryPercent.forEach((item) => {
         total += parseInt(item);
       });
-      return (this.primaryTotal = `${total}%`);
+      this.$emit('primaryTotal',`${total}%`)
+      this.primaryTotal = `${total}%`;
     },
   },
 };
@@ -240,21 +219,6 @@ export default {
 }
 .relationship-class {
   max-width: 11.666666%;
-}
-.disabled-btn {
-  color: white;
-  background-color: #c7c7c7;
-  width: 120px;
-  height: 33px;
-  border-radius: 5px;
-}
-.primaryTotalClass {
-  background-color: #f3fdf8 !important;
-  color: #6cd0a0 !important;
-}
-.primaryTotalClass1 {
-  background-color: #fff9f1 !important;
-  color: #fdba05 !important;
 }
 .bene-percent-class .v-text-field__suffix {
   color: lightgray;
